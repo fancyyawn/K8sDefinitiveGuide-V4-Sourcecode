@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: ReplicationController
 metadata:
+  namespace: k8s-guide
   name: myweb
 spec:
-  replicas: 5
+  replicas: 2
   selector:
     app: myweb
   template:
