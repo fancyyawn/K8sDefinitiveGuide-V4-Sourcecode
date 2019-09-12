@@ -4,10 +4,9 @@ metadata:
   namespace: k8s-guide
   name: tomcat-service
 spec:
-  ports:
-  - port: 8080
-    name: service-port
-  - port: 8005
-    name: shutdown-port
-  selector:
+ type: LoadBalancer
+ ports:
+  - port: 31002
+    targetPort: 8080
+ selector:
     tier: frontend

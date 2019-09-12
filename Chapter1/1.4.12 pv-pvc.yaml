@@ -2,10 +2,11 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
+  namespace: k8s-guide
   name: pv0003
 spec:
   capacity:
-    storage: 5Gi
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
   nfs:
@@ -16,10 +17,11 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
+  namespace: k8s-guide
   name: myclaim
 spec:
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 8Gi
+      storage: 1Gi

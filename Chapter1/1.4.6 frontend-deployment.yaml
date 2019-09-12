@@ -1,6 +1,7 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
+  namespace: k8s-guide
   name: frontend
 spec:
   replicas: 1
@@ -19,5 +20,8 @@ spec:
       - name: tomcat-demo
         image: tomcat
         imagePullPolicy: IfNotPresent
+        env:
+        - name: GET_HOSTS_FROM
+          value: dns
         ports:
         - containerPort: 8080
