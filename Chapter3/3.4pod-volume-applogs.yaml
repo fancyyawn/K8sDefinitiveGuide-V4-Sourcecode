@@ -3,6 +3,9 @@ kind: Pod
 metadata:
   name: volume-pod
 spec:
+  volumes:
+    - name: app-logs
+      emptyDir: {}
   containers:
   - name: tomcat
     image: tomcat
@@ -17,6 +20,3 @@ spec:
     volumeMounts:
     - name: app-logs
       mountPath: /logs
-  volumes:
-  - name: app-logs
-    emptyDir: {}

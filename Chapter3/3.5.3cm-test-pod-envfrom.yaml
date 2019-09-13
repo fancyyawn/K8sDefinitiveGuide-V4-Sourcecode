@@ -8,6 +8,6 @@ spec:
     image: busybox
     command: [ "/bin/sh", "-c", "env" ]
     envFrom:
-    - configMapRef
-       name: cm-appvars
+      - configMapRef:
+          name: cm-appvars
   restartPolicy: Never
