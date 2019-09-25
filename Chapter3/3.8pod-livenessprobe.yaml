@@ -7,19 +7,21 @@ metadata:
     test: liveness
   name: liveness-exec
 spec:
+  restartPolicy: Never
   containers:
   - name: liveness
-    image: gcr.io/google_containers/busybox
+    image: busybox
     args:
     - /bin/sh
     - -c
-    - echo ok > /tmp/health; sleep 10; rm -rf /tmp/health; sleep 600
+    - echo ok > /tmp/health; sleep 60; rm -rf /tmp/health; sleep 600
     livenessProbe:
       exec:
         command:
         - cat
         - /tmp/health
-      initialDelaySeconds: 15
+      initialDelaySeconds: 5
+      periodSeconds: 10
       timeoutSeconds: 1
 
 
@@ -28,7 +30,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-with-healthcheck
+  name: pod-with-healthcheck-tcp
 spec:
   containers:
   - name: nginx
@@ -47,7 +49,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod-with-healthcheck
+  name: pod-with-healthcheck-http
 spec:
   containers:
   - name: nginx

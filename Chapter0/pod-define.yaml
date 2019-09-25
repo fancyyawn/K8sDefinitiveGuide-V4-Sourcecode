@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: k8s-guide
+  name: pod-define
+  labels:
+    app: pod-define
+    environment: dev
+  annotations:
+    name: string
+spec:
+  restartPolicy: "Always|Never|OnFailure"
+  nodeSelector:
+    speed: fast
+    zone: north
+  imagePullSecrets:
+    - name: value
+  hostNetwork: false
+  priorityClassName: high-priority
+  #kubectl taint nodes node1 key1=value1:NoSchedule
+  #kubectl taint nodes node1 key1=value1:NoExecute
+  tolerations:
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoSchedule"
+    - key: "key1"
+      operator: "Equal"
+      value: "value1"
+      effect: "NoExecute"
+
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: security
+                operator: In
+                values:
+                  - S1
+          topologyKey: failure-domain.beta.kubernetes.io/zone
+
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - nginx
+          topologyKey: kubernetes.io/hostname
+
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 1
+          preference:
+            matchExpressions:
+              - key: disk-type
+                operator: In
+                values:
+                  - ssd
+  volumes:
+    - name: localvol
+      emptyDir: {}
+    - name: hostvol
+      hostPath:
+        path: /data
+    - name: nsfvol
+      nfs:
+        path: ip
+        server: /data
+    - name: pvcvol
+      persistentVolumeClaim:
+        claimName: myclaim
+    - name: secretvol
+      secret:
+        secretName: "xxx"
+    - name: serverconfig
+      configMap:
+        name: cm-appconfigfiles
+        items:
+          - key: key-serverxml
+            path: server.xml
+          - key: key-loggingproperties
+            path: logging.properties
+    - name: podinfo
+      downwardAPI:
+        items:
+          - path: "labels"
+            fieldRef:
+              fieldPath: metadata.labels
+          - path: "annotations"
+            fieldRef:
+              fieldPath: metadata.annotations
+  initContainers:
+    - name: install
+      image: busybox
+      command:
+        - wget
+        - "-O"
+        - "/work-dir/index.html"
+        - http://kubernetes.io
+      volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
+  containers:
+    - name: redis
+      image: kubeguide/redis-master
+      ports:
+        - containerPort: 6379
+    - name: pod-define
+      image: tomcat
+      imagePullPolicy: "Always|Never|IfNotPresent"
+      command: ["sh", "-c", "tail -f /logs/catalina*.log"]
+      args:
+        - /bin/sh
+        - -c
+        - echo ok > /tmp/health; sleep 60; rm -rf /tmp/health; sleep 600
+        - while true; do
+            echo -en '\n';
+            printenv MY_CPU_REQUEST MY_CPU_LIMIT;
+            printenv MY_MEM_REQUEST MY_MEM_LIMIT;
+            sleep 3600;
+          done;
+      workingDir: /tmp
+      volumeMounts:
+        - mountPath: /data
+          name: localvol
+          readOnly: false
+        - name: serverconfig
+          mountPath: /configfiles
+        - name: podinfo
+          mountPath: /configinfo
+          readOnly: false
+      ports:
+        - name: web-port
+          containerPort: 8080
+          hostPort: 9090
+          protocol: "TCP|UDP"
+
+      envFrom:
+        - configMapRef:
+            name: cm-appvars
+      env:
+        - name: MYSQL_HOST
+          value: 127.0.0.1
+        - name: APPLOGLEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: cm-appvars
+              key: apploglevel
+        - name: APPDATADIR
+          valueFrom:
+            configMapKeyRef:
+              name: cm-appvars
+              key: appdatadir
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_CPU_REQUEST
+          valueFrom:
+            resourceFieldRef:
+              containerName: test-container
+              resource: requests.cpu
+        - name: MY_CPU_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: test-container
+              resource: limits.cpu
+        - name: MY_MEM_REQUEST
+          valueFrom:
+            resourceFieldRef:
+              containerName: test-container
+              resource: requests.memory
+        - name: MY_MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              containerName: test-container
+              resource: limits.memory
+      resources:
+        limits:
+          cpu: 10m
+          memory: 10Mi
+        requests:
+          cpu: 5m
+          memory: 8Mi
+      livenessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/health
+        tcpSocket:
+          port: 80
+        initialDelaySeconds: 1
+        timeoutSeconds: 1
+        periodSeconds: 10
+        successThreshold: 2
+        failureThreshold: 2
+      readinessProbe:
+        exec:
+          command:
+            - "echo ready"
+        httpGet:
+          port: 8080
+          host: current
+          path: /actuator/readiness
+        initialDelaySeconds: 3
+        timeoutSeconds: 3
+        periodSeconds: 10
+        successThreshold: 2
+        failureThreshold: 2
+      securityContext:
+        privileged: false
+
+
+

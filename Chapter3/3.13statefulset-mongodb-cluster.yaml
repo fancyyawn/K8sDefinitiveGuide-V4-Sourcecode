@@ -1,11 +1,11 @@
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: fast
-provisioner: kubernetes.io/glusterfs
-parameters:
-  resturl: "http://<heketi-rest-url>"
+#---
+#apiVersion: storage.k8s.io/v1
+#kind: StorageClass
+#metadata:
+#  name: fast
+#provisioner: kubernetes.io/glusterfs
+#parameters:
+#  resturl: "http://<heketi-rest-url>"
 
 
 ---
@@ -60,13 +60,19 @@ spec:
           value: "role=mongo,environment=test"
         - name: KUBERNETES_MONGO_SERVICE_NAME
           value: "mongo"
+        - name: KUBE_NAMESPACE
+          value: "k8s-guide"
   volumeClaimTemplates:
   - metadata:
       name: mongo-persistent-storage
-      annotations:
-        volume.beta.kubernetes.io/storage-class: "fast"
     spec:
       accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "alicloud-disk-efficiency"
       resources:
         requests:
-          storage: 100Gi
+          storage: 20Gi
+
+# system:serviceaccount:default:default
+# kubectl create clusterrolebinding serviceaccounts-cluster-admin --clusterrole=cluster-admin --group=system:serviceaccounts
+
+#system:serviceaccount:k8s-guide:default

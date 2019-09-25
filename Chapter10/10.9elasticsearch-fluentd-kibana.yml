@@ -1,7 +1,7 @@
 # elasticsearch
 ---
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: elasticsearch-logging-v1
   namespace: kube-system
@@ -10,10 +10,11 @@ metadata:
     version: v1
     kubernetes.io/cluster-service: "true"
 spec:
-  replicas: 2
+  replicas: 1
   selector:
-    k8s-app: elasticsearch-logging
-    version: v1
+    matchLabels:
+      k8s-app: elasticsearch-logging
+      version: v1
   template:
     metadata:
       labels:
@@ -22,7 +23,7 @@ spec:
         kubernetes.io/cluster-service: "true"
     spec:
       containers:
-      - image: gcr.io/google_containers/elasticsearch:1.8
+      - image: elasticsearch:6.8.3
         name: elasticsearch-logging
         resources:
           # keep request = limit to keep this container in guaranteed class
@@ -42,7 +43,7 @@ spec:
           mountPath: /data
       volumes:
       - name: es-persistent-storage
-    	emptyDir: {}
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -65,7 +66,7 @@ spec:
 
 # fluentd
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: fluentd-cloud-logging
@@ -73,6 +74,9 @@ metadata:
   labels:
     k8s-app: fluentd-cloud-logging
 spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-cloud-logging
   template:
     metadata:
       namespace: kube-system
@@ -81,7 +85,7 @@ spec:
     spec:
       containers:
       - name: fluentd-cloud-logging
-        image: gcr.io/google_containers/fluentd-elasticsearch:1.17
+        image: registry.cn-beijing.aliyuncs.com/efk-install/fluentd-elasticsearch:v2.2.0
         resources:
           limits:
             cpu: 100m
@@ -108,8 +112,8 @@ spec:
 
 # kibana
 ---
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: kibana-logging-v1
   namespace: kube-system
@@ -120,8 +124,9 @@ metadata:
 spec:
   replicas: 1
   selector:
-    k8s-app: kibana-logging
-    version: v1
+    matchLabels:
+      k8s-app: kibana-logging
+      version: v1
   template:
     metadata:
       labels:
@@ -131,7 +136,7 @@ spec:
     spec:
       containers:
       - name: kibana-logging
-        image: gcr.io/google_containers/kibana:1.3
+        image: kibana:6.8.3
         resources:
           # keep request = limit to keep this container in guaranteed class
           limits:

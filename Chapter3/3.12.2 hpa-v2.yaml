@@ -290,6 +290,7 @@ spec:
   selector:
     app: sample-app
 
+---
 
 
 # 5. Prometheus ServiceMonitor

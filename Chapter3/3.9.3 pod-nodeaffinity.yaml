@@ -22,4 +22,4 @@ spec:
             - ssd
   containers:
   - name: with-node-affinity
-    image: gcr.io/google_containers/pause:2.0
+    image: nginx
